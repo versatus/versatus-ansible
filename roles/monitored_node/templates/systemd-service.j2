@@ -1,0 +1,15 @@
+[Unit]
+Description=Prometheus {{ service.name }} exporter
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=root
+ExecStart={{ exporter_dir }}/{{ service.name }} {{ service.args }}
+
+[Install]
+WantedBy=multi-user.target
+

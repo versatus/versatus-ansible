@@ -1,0 +1,4 @@
+---
+exporter_dir: /opt/versatus/bin
+systemd_dir: /etc/systemd/system
+exporters: []

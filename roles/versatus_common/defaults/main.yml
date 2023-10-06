@@ -1,0 +1,13 @@
+---
+# This is the user that owns the top-level directory tree. Not necessarily the user
+# running any of the services.
+admin_user: root
+admin_group: root
+
+# Path to the root of all that is versatus. The default is LSB-compliant, but can
+# be overridden for individual deployments.
+versatus_dir: /opt/versatus
+versatus_service_group: versatus
+
+# The place to put systemd unit and slice files
+systemd_dir: /etc/systemd/system

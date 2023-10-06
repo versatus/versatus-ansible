@@ -1,0 +1,31 @@
+{
+  "services": {
+    "compute": [ {
+      "name": "compute1",
+      "rpcAddress": "::1",
+      "rpcPort": 9125,
+      "preSharedKey": "{{ compute_key }}",
+      "tlsPrivateKeyFile": "",
+      "tlsPublicCertFile": "",
+      "tlsCaCertFile": ""
+    } ],
+    "storage": [ {
+      "name": "storage1",
+      "rpcAddress": "::1",
+      "rpcPort": 9126,
+      "preSharedKey": "{{ storage_key }}",
+      "tlsPrivateKeyFile": "",
+      "tlsPublicCertFile": "",
+      "tlsCaCertFile": ""
+    } ],
+    "blockchain": [ {
+      "name": "blockchain1",
+      "rpcAddress": "::1",
+      "rpcPort": 9124,
+      "preSharedKey": "{{ blockchain_key }}",
+      "tlsPrivateKeyFile": "",
+      "tlsPublicCertFile": "",
+      "tlsCaCertFile": ""
+    } ]
+  }
+}

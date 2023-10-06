@@ -1,0 +1,8 @@
+---
+- targets:
+    - {{ inventory_hostname }}:9100
+  labels:
+    protocol: true
+    datacenter: {{ hostvars[inventory_hostname].datacenter | default('unknown') }}
+    bootstrap: {% if bootstrap_node == inventory_hostname %}true{% else %}false{% endif %}
+

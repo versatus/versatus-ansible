@@ -1,0 +1,17 @@
+[Unit]
+Description=Versatus Network Protocol
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User={{ service_user }}
+WorkingDirectory={{ versatus_dir }}/home/{{ service_name }}
+ExecStart={{ versatus_dir }}/bin/{{ service_name }} {{ service_args }}
+Slice={{ service_name }}.slice
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,12 @@
+---
+# handlers file for monitored_node
+- name: Systemd reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Service run state 
+  ansible.builtin.systemd:
+    name: "{{ item.name }}"
+    enabled: true
+    state: started
+  loop: "{{ exporters }}"

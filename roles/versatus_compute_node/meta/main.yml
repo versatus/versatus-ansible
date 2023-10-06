@@ -1,0 +1,27 @@
+galaxy_info:
+  author: Versatus Labs
+  description: A node to provide compute to the Versatus Network
+  company: Versatus Labs
+
+  issue_tracker_url: https://github.com/versatus/versatus/issues
+
+  license: MIT
+
+  min_ansible_version: "2.10"
+
+  # TODO: change this depending on what we test against
+  platforms:
+    - name: Ubuntu
+      versions:
+        - "jammy"
+        - "focal"
+
+  galaxy_tags: ["versatus", "blockchain", "web3"]
+
+dependencies:
+  - role: versatus_common
+    vars:
+      service_name: versatus-compute
+      service_user: versatus-compute
+      service_executable: "files/versa-compute"
+      service_args: "daemon"

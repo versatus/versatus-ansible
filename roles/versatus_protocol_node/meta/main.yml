@@ -1,0 +1,39 @@
+galaxy_info:
+  author: Versatus Labs
+  description: A node to participate in the Versatus Network Protocol
+  company: Versatus Labs
+
+  issue_tracker_url: https://github.com/versatus/versatus/issues
+
+  license: MIT
+
+  min_ansible_version: "2.10"
+
+  # TODO: change this depending on what we test against
+  platforms:
+    - name: Ubuntu
+      versions:
+        - "jammy"
+        - "focal"
+
+  galaxy_tags: ["versatus", "blockchain", "web3"]
+    # List tags for your role here, one per line. A tag is a keyword that describes
+    # and categorizes the role. Users find roles by searching for tags. Be sure to
+    # remove the '[]' above, if you add tags to this list.
+    #
+    # NOTE: A tag is limited to a single word comprised of alphanumeric characters.
+    #       Maximum 20 tags per role.
+
+dependencies:
+  - role: versatus_common
+    vars:
+      service_name: versatus-protocol
+      service_user: versatus-protocol
+      bootstrap_port: 8080
+      gossip_address: 0.0.0.0:8081
+      raptorq_address: 0.0.0.0:8082
+      http_api_address: 0.0.0.0:8083
+      json_rpc_address: 0.0.0.0:8084
+      grpc_address: 0.0.0.0:8085
+      service_executable: "files/versa"
+      service_args: "node run {% if bootstrap_node == inventory_hostname %}--bootstrap True --node-type Bootstrap{% else %}--bootstrap-node-addresses {{ bootstrap_node }}:{{ bootstrap_port }} --node-type Full {% endif %} --udp-gossip-address {{ gossip_address }} --raptorq-gossip-address {{ raptorq_address }} --http-api-address {{ http_api_address }} --jsonrpc-api-address {{ json_rpc_address }} --grpc-server-address {{ grpc_address }}"
