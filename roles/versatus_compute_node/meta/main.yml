@@ -24,4 +24,4 @@ dependencies:
       service_name: versatus-compute
       service_user: versatus-compute
       service_executable: "files/versa-compute"
-      service_args: "daemon"
+      service_args: "-c /opt/versatus/etc/versatus-services.json -s compute1 -t compute daemon"
