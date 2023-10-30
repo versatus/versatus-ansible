@@ -15,3 +15,8 @@ scrape_configs:
     file_sd_configs:
       - files:
         - 'scrape_targets/node/*.yml'
+
+  - job_name: 'versatus'
+    file_sd_configs:
+      - files:
+        - 'scrape_targets/versatus/*.yml'
