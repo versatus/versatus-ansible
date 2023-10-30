@@ -1,4 +1,51 @@
 ---
-- name: Debug
+- name: Protocol public key generation
+  # This command is idempotent
+  ansible.builtin.shell:
+    cmd: "{{ versatus_dir }}/bin/versatus-protocol keygen | grep '^PublicKey:' | cut -f 2 -d ' '"
+    chdir: "{{ versatus_dir }}/home/versatus-protocol"
+  become: yes
+  become_user: versatus-protocol
+  become_method: su
+  register: pubkey
+- name: Protocol public key
+  ansible.builtin.set_fact:
+    quorum_public_key: "{{ pubkey.stdout }}"
+- name: Existing UUID
+  ansible.builtin.stat:
+    path: "{{ versatus_dir }}/etc/versatus_node_id"
+  register: keyfile
+- name: Generate new UUID
+  ansible.builtin.command:
+    cmd: "uuidgen -r"
+    creates: "{{ versatus_dir }}/etc/versatus_node_id"
+  when: not keyfile.stat.exists
+  register: uuidgen
+- name: Persist UUID
+  ansible.builtin.copy:
+    dest: "{{ versatus_dir }}/etc/versatus_node_id"
+    content: "{{ uuidgen.stdout }}"
+    owner: root
+    group: root
+    mode: "0640"
+  when: not keyfile.stat.exists
+- name: Read Node UUID
+  ansible.builtin.slurp:
+    src: "{{ versatus_dir }}/etc/versatus_node_id"
+  register: versatus_node_id
+- name: Node UUID
   ansible.builtin.debug:
-    msg: Protocol role complete
+    msg: "{{ versatus_node_id.content | b64decode }} / {{ quorum_public_key }}"
+- name: Quorum Entry
+  ansible.builtin.set_fact:
+    versatus_quorum_entry:
+      node_id: "{{ versatus_node_id.content | b64decode }}"
+      # TODO: below shouldn't be validator for miner/bootstrap
+      node_type: "{% if 'bootstrap' in do_tags %}bootstrap{% else %}validator{% endif %}"
+      # These two aren't needed other than to allow serde to parse the JSON
+      kademlia_liveness_address: []
+      kademlia_peer_id: []
+      validator_public_key: "{{ quorum_public_key }}"
+      # TODO: it would be nice to have these port numbers less static
+      raptorq_gossip_address: "{{ ansible_host }}:8082"
+      udp_gossip_address: "{{ ansible_host }}:8081"

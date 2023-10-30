@@ -1,0 +1,39 @@
+---
+# Tasks for generating the shared configuration between all of the quorum members
+- name: Farmer Node Quorum Entries
+  ansible.builtin.set_fact:
+    farmers: "{{ farmers | default([]) + [ hostvars[item]['versatus_quorum_entry'] ] }}"
+  loop: "{{ groups['farmer'] }}"
+- name: Harvester Node Quorum Entries
+  ansible.builtin.set_fact:
+    harvesters: "{{ harvesters | default([]) + [ hostvars[item]['versatus_quorum_entry'] ] }}"
+  loop: "{{ groups['harvester'] }}"
+# This one isn't an array
+- name: Miner variable
+  ansible.builtin.set_fact:
+    miner_entry: "{{ groups['miner'][0] }}"
+- name: cunt
+  ansible.builtin.debug:
+    var: hostvars[miner_entry]
+- name: Bootstrap/Miner Node Quorum Entry
+  ansible.builtin.set_fact:
+    miner: "{{ hostvars[miner_entry]['versatus_quorum_entry'] }}"
+- name: Quorum Entries
+  ansible.builtin.set_fact:
+    quorum:
+      genesis-miner: "{{ miner }}"
+      genesis-farmers: "{{ farmers }}"
+      genesis-harvesters: "{{ harvesters }}"
+- name: quorum
+  ansible.builtin.copy:
+    dest: "{{ versatus_dir }}/etc/whitelist.json"
+    content: "{{ quorum | to_nice_json(indent=2) }}"
+    owner: root
+    group: root
+    mode: "0644"
+- name: Unnecessarily large hammer
+  ansible.builtin.systemd:
+    name: versatus-protocol
+    state: restarted
+    enabled: true
+    daemon_reload: true
