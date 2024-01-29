@@ -24,8 +24,4 @@ dependencies:
       service_name: versatus-storage
       service_user: versatus-storage
       service_executable: "files/versa-storage"
-<<<<<<< Updated upstream
-      service_args: "daemon"
-=======
       service_args: "-c {{ versatus_dir }}/etc/versatus-services.json -s storage1 -t storage daemon"
->>>>>>> Stashed changes
