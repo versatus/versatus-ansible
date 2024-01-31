@@ -34,6 +34,5 @@ dependencies:
       raptorq_address: 0.0.0.0:8082
       http_api_address: 0.0.0.0:8083
       json_rpc_address: 0.0.0.0:8084
-      grpc_address: 0.0.0.0:8085
       service_executable: "files/versa"
-      service_args: "node run {% if bootstrap_node == inventory_hostname %}--bootstrap True --node-type Bootstrap{% else %}--bootstrap-node-addresses {{ bootstrap_node }}:{{ bootstrap_port }} --node-type Full {% endif %} --udp-gossip-address {{ gossip_address }} --raptorq-gossip-address {{ raptorq_address }} --http-api-address {{ http_api_address }} --jsonrpc-api-address {{ json_rpc_address }} --grpc-server-address {{ grpc_address }}"
+      service_args: "node run {% if bootstrap_node == inventory_hostname %}--bootstrap True --node-type Bootstrap{% else %}--bootstrap-node-addresses {{ bootstrap_node }}:{{ bootstrap_port }} --node-type Full {% endif %} --udp-gossip-address {{ gossip_address }} --raptorq-gossip-address {{ raptorq_address }} --http-api-address {{ http_api_address }} --jsonrpc-api-address {{ json_rpc_address }} --whitelist-path {{ versatus_dir }}/etc/whitelist.json"

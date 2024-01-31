@@ -1,39 +1,8 @@
 ---
-# Check whether there's already an instance of the Prometheus node exporter deployed
-- name: Existing node_exporter
-  ansible.builtin.stat:
-    path: /usr/bin/prometheus-node-exporter
-  register: node_exporter
-
-#- name: Include Prometheus node exporter
-  #ansible.builtin.set_fact:
-    #exporters: "{{ exporters + [ 'node_exporter' ] }}"
-  #when: node_exporter.stat.exists == False
-
-# TODO: we could probably actually download the right package and extract it for the binary...
-- name: Prometheus exporter deployment 
-  ansible.builtin.copy:
-    src: "{{ item.name }}"
-    dest: "{{ exporter_dir }}/{{ item.name }}"
-    owner: root
-    group: root
-    mode: "0755"
-  loop: "{{ exporters }}"
-  notify:
-    - Systemd reload
-    - Service run state
-
-- name: Prometheus exporter systemd units
-  ansible.builtin.template:
-    src: "systemd-service.j2"
-    dest: "{{ systemd_dir }}/{{ service.name }}.service"
-  loop: "{{ exporters }}"
-  loop_control:
-    loop_var: service
-  notify:
-    - Systemd reload
-    - Service run state
-
+- name: Prometheus exporter package
+  ansible.builtin.apt:
+    name: prometheus-node-exporter
+    state: present
 
 - name: Node scrape target
   ansible.builtin.template:
@@ -43,3 +12,35 @@
     group: root
     mode: "0755"
   delegate_to: "{{ prometheus_node }}"
+
+- name: Compute scrape target
+  ansible.builtin.template:
+    src: "scrape_compute.yml.j2"
+    dest: "/etc/prometheus/scrape_targets/versatus/{{ ansible_hostname }}-compute.yml"
+    owner: root
+    group: root
+    mode: "0755"
+  when: '"compute" in hostvars[ansible_hostname].do_tags'
+  delegate_to: "{{ prometheus_node }}"
+
+- name: Storage scrape target
+  ansible.builtin.template:
+    src: "scrape_storage.yml.j2"
+    dest: "/etc/prometheus/scrape_targets/versatus/{{ ansible_hostname }}-storage.yml"
+    owner: root
+    group: root
+    mode: "0755"
+  when: '"storage" in hostvars[ansible_hostname].do_tags'
+  delegate_to: "{{ prometheus_node }}"
+
+# some basic initial name resolution across the network.
+- name: Hosts file
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    state: present
+    line: "{{ item.value['ansible_host'] }}        {{ item.value['ansible_hostname'] }}"
+    regexp: ".*{{ item.value['ansible_hostname'] }}$"
+  loop: "{{ hostvars | dict2items }}"
+  tags:
+    - hostsfile
+

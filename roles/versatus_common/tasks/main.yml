@@ -1,13 +1,4 @@
 ---
-# This should probably persist this key somewhere, so that it doesn't change each time
-# we call it. It generates the per-service pre-shared key for each service, for use by
-# both the client and the server.
-- name: Generate protocol key
-  ansible.builtin.set_fact:
-    blockchain_key: "{{ lookup('community.general.random_string', length=12) }}"
-    compute_key: "{{ lookup('community.general.random_string', length=12) }}"
-    storage_key: "{{ lookup('community.general.random_string', length=12) }}"
-
 - name: Versatus directory tree
   ansible.builtin.file:
     path: "{{ item }}"
@@ -19,6 +10,13 @@
     - "{{ versatus_dir }}/bin"
     - "{{ versatus_dir }}/etc"
     - "{{ versatus_dir }}/home"
+
+    # TODO: We should persist and retrieve these keys to make this idempotent.
+- name: Generate protocol key
+  ansible.builtin.set_fact:
+    blockchain_key: "{{ lookup('community.general.random_string', length=12, special=false) }}"
+    compute_key: "{{ lookup('community.general.random_string', length=12, special=false) }}"
+    storage_key: "{{ lookup('community.general.random_string', length=12, special=false) }}"
 
 # Create a group common across all service that all users will be a member of. This
 # helps to manage permissions and things more easily.
