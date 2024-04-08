@@ -10,3 +10,9 @@
     enabled: true
     state: started
   loop: "{{ exporters }}"
+
+- name: Prometheus reload
+  ansible.builtin.systemd:
+    name: "prometheus"
+    state: reloaded
+  delegate_to: "{{ prometheus_node }}"

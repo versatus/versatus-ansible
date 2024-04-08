@@ -1,28 +1,33 @@
 ---
-# Check whether there's already an instance of the Prometheus node exporter deployed
-- name: Existing node_exporter
-  ansible.builtin.stat:
-    path: /usr/bin/prometheus-node-exporter
-  register: node_exporter
-
-#- name: Include Prometheus node exporter
-  #ansible.builtin.set_fact:
-    #exporters: "{{ exporters + [ 'node_exporter' ] }}"
-  #when: node_exporter.stat.exists == False
-
-# TODO: we could probably actually download the right package and extract it for the binary...
-- name: Prometheus exporter deployment 
-  ansible.builtin.copy:
-    src: "{{ item.name }}"
-    dest: "{{ exporter_dir }}/{{ item.name }}"
+# Make sure the default node exporter package isn't installed, as we'll use github binaries for each
+- name: Existing node exporter
+  ansible.builtin.package:
+    name: prometheus-node-exporter
+    state: absent
+- name: Prometheus exporter directory
+  ansible.builtin.file:
+    path: "{{ exporter_dir }}"
+    state: directory
     owner: root
     group: root
-    mode: "0755"
+- name: Prometheus exporters
+  ansible.builtin.unarchive:
+    remote_src: true
+    src: "{{ service.pkg_url }}"
+    dest: "{{ exporter_dir }}"
+    creates: "{{ exporter_dir }}/{{ service.name }}"
+    extra_opts:
+      - "--strip-components"
+      - 1
+    include:
+      - "{{ service.pkg_name }}/{{ service.name }}"
   loop: "{{ exporters }}"
+  loop_control:
+    loop_var: service
   notify:
     - Systemd reload
     - Service run state
-
+    
 - name: Prometheus exporter systemd units
   ansible.builtin.template:
     src: "systemd-service.j2"
@@ -38,8 +43,13 @@
 - name: Node scrape target
   ansible.builtin.template:
     src: "scrape_target.yml.j2"
-    dest: "/etc/prometheus/scrape_targets/node/{{ ansible_hostname }}.yml"
+    dest: "/etc/prometheus/scrape_targets/{{ service.name }}/{{ ansible_hostname }}.yml"
     owner: root
     group: root
     mode: "0755"
   delegate_to: "{{ prometheus_node }}"
+  loop: "{{ exporters }}"
+  loop_control:
+    loop_var: service
+  notify:
+    - Prometheus reload

@@ -1,0 +1,29 @@
+[Unit]
+Description=Versatus LASR Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User={{ service_user }}
+WorkingDirectory={{ versatus_dir }}/home/{{ service_name }}
+ExecStart={{ versatus_dir }}/bin/{{ service_name }} {{ service_args }}
+Slice={{ service_name }}.slice
+# Environment variables used to control the LASR service instead of CLI options
+Environment=SECRET_KEY={{ lasr_secret_key }}
+Environment=BLOCKS_PROCESSED_PATH={{ lasr_blocks_processed_file }}
+Environment=ETH_RPC_URL="{{ lasr_eth_rpc_url }}"
+Environment=EO_CONTRACT_ADDRESS="{{ lasr_oracle_contract_address }}"
+Environment=COMPUTE_RPC_URL={{ lasr_compute_url }}
+Environment=STORAGE_RPC_URL={{ lasr_storage_url }}
+Environment=BATCH_INTERVAL={{ lasr_batch_interval }}
+Environment=PATH={{ versatus_dir }}/bin:/bin:/usr/bin
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=versatus-lasr
+
+[Install]
+WantedBy=multi-user.target
+

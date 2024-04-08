@@ -1,0 +1,14 @@
+---
+kubo_ver: 0.27.0
+kubo_arch: amd64
+
+versatus_dir: /opt/versatus
+service_user: versatus-ipfs
+service_name: versatus-ipfs
+service_args: daemon
+
+versatus_service_group: versatus
+systemd_dir: /etc/systemd/system
+
+admin_user: root
+admin_group: root

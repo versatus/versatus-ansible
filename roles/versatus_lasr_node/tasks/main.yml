@@ -1,0 +1,108 @@
+---
+- name: Versatus directory tree
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_group }}"
+    mode: "0755"
+  loop:
+    - "{{ versatus_dir }}/bin"
+    - "{{ versatus_dir }}/etc"
+    - "{{ versatus_dir }}/home"
+
+# Create a group common across all service that all users will be a member of. This
+# helps to manage permissions and things more easily.
+- name: Versatus service group
+  ansible.builtin.group:
+    name: "{{ versatus_service_group }}"
+    state: present
+
+# Create the service account user for this particular service. The name is provided
+# by the caller. We make this user a member of the kvm group too, to allow it to 
+# execute virtual machines.
+- name: Versatus service user
+  ansible.builtin.user:
+    name: "{{ service_user }}"
+    group: "{{ versatus_service_group }}"
+    groups: kvm
+    state: present
+    comment: "Versatus {{ service_user }} user"
+    home: "{{ versatus_dir }}/home/{{ service_user }}"
+    password: "*"
+    system: true
+    umask: "027"
+
+# Ensure that the home directory exists and has the right permissions. This should
+# generally happen by default, but may not be as strict.
+- name: Service user home directory
+  ansible.builtin.file:
+    path: "{{ versatus_dir }}/home/{{ service_user }}"
+    state: directory
+    owner: "{{ service_user }}"
+    group: "{{ versatus_service_group }}"
+    mode: "0750"
+
+# Retrieve some EigenDA code. This seems like it should be tied to a specific
+# revision to avoid issues in the future....
+- name: EigenDA git repo
+  ansible.builtin.git:
+    repo: "https://github.com/Layr-Labs/eigenda.git"
+    dest: "{{ versatus_dir }}/home/{{ service_name }}/eigenda"
+    force: true
+
+# Install gVisor container runtime using proper package management.
+- name: gVisor apt key
+  ansible.builtin.apt_key:
+    url: https://gvisor.dev/archive.key
+    keyring: /usr/share/keyrings/gvisor-archive-keyring.gpg
+    state: present
+
+- name: gVisor apt repository
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64 signed-by=/usr/share/keyrings/gvisor-archive-keyring.gpg] https://storage.googleapis.com/gvisor/releases release main
+    state: present
+    filename: gvisor
+
+- name: gVisor packages
+  ansible.builtin.apt:
+    name: runsc
+    state: present
+    update_cache: true
+    clean: true
+    autoclean: true
+
+- name: grpcurl binary
+  ansible.builtin.unarchive:
+    remote_src: true
+    src: https://github.com/fullstorydev/grpcurl/releases/download/v{{ grpcurl_ver }}/grpcurl_{{ grpcurl_ver }}_linux_{{ grpcurl_arch }}.tar.gz
+    dest: "{{ versatus_dir }}/bin"
+    creates: "{{ versatus_dir }}/bin/grpcurl"
+    include:
+      - "grpcurl"
+
+- name: Service executable
+  ansible.builtin.copy:
+    src: "{{ service_executable }}"
+    dest: "{{ versatus_dir }}/bin/{{ service_name }}"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_group }}"
+    mode: "0755"
+  notify:
+    - Systemd units
+    - Service restart
+
+- name: Service systemd unit
+  ansible.builtin.template:
+    src: "systemd-{{ item }}.j2"
+    dest: "{{ systemd_dir }}/{{ service_name }}.{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+    - "service"
+    - "slice"
+  notify:
+    - Systemd units
+    - Service run state
+    - Service restart

@@ -1,8 +1,9 @@
 ---
 - targets:
-    - {{ inventory_hostname }}:9100
+    - {{ ansible_default_ipv4["address"] }}:{{ service.port }}
   labels:
-    protocol: true
+    name: {{ inventory_hostname }}
     datacenter: {{ hostvars[inventory_hostname].datacenter | default('unknown') }}
-    bootstrap: {% if bootstrap_node == inventory_hostname %}true{% else %}false{% endif %}
+    distro: {{ hostvars[inventory_hostname].distro | default('unknown') }}
+    size: {{ hostvars[inventory_hostname].node_size | default('unknown') }}
 

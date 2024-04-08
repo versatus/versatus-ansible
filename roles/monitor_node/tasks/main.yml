@@ -21,4 +21,6 @@
     mode: "0755"
   loop:
     - "scrape_targets"
-    - "scrape_targets/node"
+    - "scrape_targets/node_exporter"
+    - "scrape_targets/cgroup_exporter"
+    - "scrape_targets/process_exporter"
