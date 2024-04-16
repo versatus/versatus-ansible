@@ -1,0 +1,18 @@
+[Unit]
+Description=Kubo IPFS service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User={{ service_user }}
+WorkingDirectory={{ versatus_dir }}/home/{{ service_name }}
+ExecStart={{ versatus_dir }}/bin/{{ service_name }} {{ service_args }}
+Slice={{ service_name }}.slice
+Environment=IPFS_PATH="{{ versatus_dir }}/home/{{ service_name }}/ipfs"
+
+[Install]
+WantedBy=multi-user.target
+

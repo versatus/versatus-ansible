@@ -1,0 +1,97 @@
+---
+- name: Versatus directory tree
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_group }}"
+    mode: "0755"
+  loop:
+    - "{{ versatus_dir }}/bin"
+    - "{{ versatus_dir }}/etc"
+    - "{{ versatus_dir }}/home"
+
+# Create a group common across all service that all users will be a member of. This
+# helps to manage permissions and things more easily.
+- name: Versatus service group
+  ansible.builtin.group:
+    name: "{{ versatus_service_group }}"
+    state: present
+
+# Create the service account user for this particular service. The name is provided
+# by the caller. We make this user a member of the kvm group too, to allow it to 
+# execute virtual machines.
+- name: Versatus service user
+  ansible.builtin.user:
+    name: "{{ service_user }}"
+    group: "{{ versatus_service_group }}"
+    state: present
+    comment: "Versatus {{ service_user }} user"
+    home: "{{ versatus_dir }}/home/{{ service_user }}"
+    password: "*"
+    system: true
+    umask: "027"
+
+# Ensure that the home directory exists and has the right permissions. This should
+# generally happen by default, but may not be as strict.
+- name: Service user home directory
+  ansible.builtin.file:
+    path: "{{ versatus_dir }}/home/{{ service_user }}"
+    state: directory
+    owner: "{{ service_user }}"
+    group: "{{ versatus_service_group }}"
+    mode: "0750"
+
+# Extract the kubo binary from the published release tarball on github.
+- name: Kubo binary
+  ansible.builtin.unarchive:
+    src: https://github.com/ipfs/kubo/releases/download/v{{ kubo_ver }}/kubo_v{{ kubo_ver }}_linux-{{ kubo_arch }}.tar.gz
+    remote_src: true
+    dest: '{{ versatus_dir }}/bin'
+    extra_opts:
+      - "--transform"
+      - s/^kubo\//versatus-/
+    include:
+      - kubo/ipfs
+  notify:
+    - Systemd units
+    - Service restart
+
+- name: Initialise Kubo datastore
+  ansible.builtin.command:
+    argv:
+      - "{{ versatus_dir }}/bin/{{ service_name }}"
+      - "init"
+    creates: "{{ versatus_dir }}/home/{{ service_user }}/ipfs"
+  become: yes
+  become_user: "{{ service_user }}"
+  environment:
+    IPFS_PATH: "{{ versatus_dir }}/home/{{ service_user }}/ipfs"
+
+# This causes the API and gateway services within Kubo to listen not on loopback, but instead on our
+# pricate network, which allows other VPCs to use this service without making it public.
+- name: Bind to Digital Ocean private interface
+  ansible.builtin.replace:
+    path: "{{ versatus_dir }}/home/{{ service_user }}/ipfs/config"
+    regexp: "127.0.0.1"
+    replace: "{{ private_ip }}"
+    backup: false
+  become: yes
+  become_user: "{{ service_user }}"
+  notify:
+    - Service restart
+
+- name: Service systemd unit
+  ansible.builtin.template:
+    src: "systemd-{{ item }}.j2"
+    dest: "{{ systemd_dir }}/{{ service_name }}.{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+    - "service"
+    - "slice"
+  notify:
+    - Systemd units
+    - Service run state
+    - Service restart

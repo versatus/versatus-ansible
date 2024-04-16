@@ -1,19 +1,34 @@
 ---
-- name: Prometheus exporter package
-  ansible.builtin.apt:
+# Make sure the default node exporter package isn't installed, as we'll use github binaries for each
+- name: Existing node exporter
+  ansible.builtin.package:
     name: prometheus-node-exporter
-    state: present
-
-- name: Node scrape target
-  ansible.builtin.template:
-    src: "scrape_target.yml.j2"
-    dest: "/etc/prometheus/scrape_targets/node/{{ ansible_hostname }}.yml"
+    state: absent
+- name: Prometheus exporter directory
+  ansible.builtin.file:
+    path: "{{ exporter_dir }}"
+    state: directory
     owner: root
     group: root
-    mode: "0755"
-  delegate_to: "{{ prometheus_node }}"
-
-- name: Compute scrape target
+- name: Prometheus exporters
+  ansible.builtin.unarchive:
+    remote_src: true
+    src: "{{ service.pkg_url }}"
+    dest: "{{ exporter_dir }}"
+    creates: "{{ exporter_dir }}/{{ service.name }}"
+    extra_opts:
+      - "--strip-components"
+      - 1
+    include:
+      - "{{ service.pkg_name }}/{{ service.name }}"
+  loop: "{{ exporters }}"
+  loop_control:
+    loop_var: service
+  notify:
+    - Systemd reload
+    - Service run state
+    
+- name: Prometheus scrape targets
   ansible.builtin.template:
     src: "scrape_compute.yml.j2"
     dest: "/etc/prometheus/scrape_targets/versatus/{{ ansible_hostname }}-compute.yml"
@@ -25,13 +40,13 @@
 
 - name: Storage scrape target
   ansible.builtin.template:
-    src: "scrape_storage.yml.j2"
-    dest: "/etc/prometheus/scrape_targets/versatus/{{ ansible_hostname }}-storage.yml"
-    owner: root
-    group: root
-    mode: "0755"
-  when: '"storage" in hostvars[ansible_hostname].do_tags'
-  delegate_to: "{{ prometheus_node }}"
+    src: "scrape_target.yml.j2"
+    dest: "/etc/prometheus/scrape_targets/{{ service.name }}/{{ ansible_hostname }}.yml"
+  loop: "{{ exporters }}"
+  loop_control:
+    loop_var: service
+  notify:
+    - Prometheus reload
 
 # some basic initial name resolution across the network.
 - name: Hosts file
@@ -43,4 +58,3 @@
   loop: "{{ hostvars | dict2items }}"
   tags:
     - hostsfile
-

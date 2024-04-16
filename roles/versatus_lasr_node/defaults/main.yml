@@ -1,0 +1,41 @@
+---
+# The name of this service. Used to name the destination binary, the systemd unit, etc.
+service_name: versatus-lasr
+# The user that the service will be run as.
+service_user: versatus-lasr
+# The service uses a ton of variables instead of a structured command line interface
+service_args: ""
+# Source binary for the versatus LASR binary
+service_executable: "files/lasr_node"
+
+# version/architecture of grpcurl binary to download
+grpcurl_ver: 1.8.9
+grpcurl_arch: x86_64
+
+# This is the user that owns the top-level directory tree. Not necessarily the user
+# running any of the services.
+admin_user: root
+admin_group: root
+
+# Path to the root of all that is versatus. The default is LSB-compliant, but can
+# be overridden for individual deployments.
+versatus_dir: /opt/versatus
+versatus_service_group: versatus
+
+# The place to put systemd unit and slice files
+systemd_dir: /etc/systemd/system
+
+# Location of LASR's blocks-processed log
+lasr_blocks_processed_file: "{{ versatus_dir }}/home/{{ service_name }}/blocks_processed.dat"
+
+# address of the ethereum oracle contract
+lasr_oracle_contract_address: "0xca3ed4ab07ef6b98d797a35a5aef301ec24a829f"
+# ethereum RPC endpoint
+lasr_eth_rpc_url: "https://u0bddpyrvy:wUYnFGT8qmldV1KsTPoEwo04cVjvVbBFE26pl5rZ_c8@u0v4deab9j-u0ghk9j0sc-rpc.us0-aws.kaleido.io/"
+
+# locations of services we should be using, but don't. This should also eventually
+# go through the service_config crate for service configuration and discovery.
+lasr_compute_url: ws://localhost:9125
+lasr_storage_url: ws://localhost:9126
+# batch interval in seconds
+lasr_batch_interval: 180

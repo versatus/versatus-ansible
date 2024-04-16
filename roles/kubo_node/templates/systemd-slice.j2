@@ -1,0 +1,11 @@
+[Unit]
+Description=Slice used to contain and monitor the Versatus {{ service_name }} service
+Before=slices.target
+
+# By default, we just enable account and don't set any limits.
+[Slice]
+MemoryAccounting=true
+IOAccounting=true
+CPUAccounting=true
+TasksAccounting=true
+IPAccounting=true

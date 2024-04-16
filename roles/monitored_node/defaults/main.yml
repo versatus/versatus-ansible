@@ -1,4 +1,20 @@
 ---
 exporter_dir: /opt/versatus/bin
 systemd_dir: /etc/systemd/system
-exporters: []
+exporters:
+  - name: node_exporter
+    args: 
+    pkg_name: node_exporter-1.7.0.linux-amd64
+    pkg_url: https://github.com/prometheus/node_exporter/releases/download/v1.7.0/node_exporter-1.7.0.linux-amd64.tar.gz
+    port: 9100
+  - name: cgroup_exporter
+    args: "--config.paths=/versatus.slice,/versatus.slice/versatus-lasr.slice,/versatus.slice/versatus-ipfs.slice,/system.slice"
+    pkg_name: cgroup_exporter-0.9.1.linux-amd64
+    pkg_url: https://github.com/treydock/cgroup_exporter/releases/download/v0.9.1/cgroup_exporter-0.9.1.linux-amd64.tar.gz
+    port: 9306
+broken_exporters:
+  - name: process_exporter
+    args: "-procnames versatus-lasr,versatus-ipfs,versatus-compute,versatus-storage"
+    pkg_name: process-exporter-0.7.10.linux-amd64
+    pkg_url: https://github.com/ncabatoff/process-exporter/releases/download/v0.7.10/process-exporter-0.7.10.linux-amd64.tar.gz
+    port: 9256
