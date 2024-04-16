@@ -28,28 +28,33 @@
     - Systemd reload
     - Service run state
     
-- name: Prometheus exporter systemd units
+- name: Prometheus scrape targets
   ansible.builtin.template:
-    src: "systemd-service.j2"
-    dest: "{{ systemd_dir }}/{{ service.name }}.service"
-  loop: "{{ exporters }}"
-  loop_control:
-    loop_var: service
-  notify:
-    - Systemd reload
-    - Service run state
-
-
-- name: Node scrape target
-  ansible.builtin.template:
-    src: "scrape_target.yml.j2"
-    dest: "/etc/prometheus/scrape_targets/{{ service.name }}/{{ ansible_hostname }}.yml"
+    src: "scrape_compute.yml.j2"
+    dest: "/etc/prometheus/scrape_targets/versatus/{{ ansible_hostname }}-compute.yml"
     owner: root
     group: root
     mode: "0755"
+  when: '"compute" in hostvars[ansible_hostname].do_tags'
   delegate_to: "{{ prometheus_node }}"
+
+- name: Storage scrape target
+  ansible.builtin.template:
+    src: "scrape_target.yml.j2"
+    dest: "/etc/prometheus/scrape_targets/{{ service.name }}/{{ ansible_hostname }}.yml"
   loop: "{{ exporters }}"
   loop_control:
     loop_var: service
   notify:
     - Prometheus reload
+
+# some basic initial name resolution across the network.
+- name: Hosts file
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    state: present
+    line: "{{ item.value['ansible_host'] }}        {{ item.value['ansible_hostname'] }}"
+    regexp: ".*{{ item.value['ansible_hostname'] }}$"
+  loop: "{{ hostvars | dict2items }}"
+  tags:
+    - hostsfile

@@ -1,7 +1,7 @@
 #jinja2: trim_blocks:False
 ---
 - targets:
-    - {{ ansible_default_ipv4["address"] }}:{{ service.port }}
+    - {{ inventory_hostname }}:9103
   labels:
     protocol_role: {% if 'bootstrap' in hostvars[inventory_hostname].do_tags %}bootstrap{% elif 'farmer' in hostvars[inventory_hostname].do_tags %}farmer{% elif 'harvester' in hostvars[inventory_hostname].do_tags %}harvester{% else %}none{% endif %}
     compute_node: {% if 'compute' in hostvars[inventory_hostname].do_tags %}true{% else %}false{% endif %}
@@ -9,5 +9,4 @@
     monthly_cost: {{ hostvars[inventory_hostname].do_size.price_monthly | default('unknown') }}
     datacenter: {{ hostvars[inventory_hostname].do_region.slug | default('unknown') }}
     model: {{ hostvars[inventory_hostname].do_size.slug | default('unknown') }}
-
 
